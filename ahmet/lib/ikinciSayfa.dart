@@ -1,0 +1,102 @@
+import 'package:flutter/material.dart';
+import 'package:ahmet/taskmodel.dart';
+import 'package:ahmet/home.dart';
+
+class AddTaskPage extends StatefulWidget {
+  const AddTaskPage({super.key});
+
+  @override
+  State<AddTaskPage> createState() => _AddTaskPageState();
+}
+
+class _AddTaskPageState extends State<AddTaskPage> {
+  final TextEditingController titleController = TextEditingController();
+  int priority = 0;
+  DateTime? deadline;
+
+  Future<void> pickDeadline(BuildContext context) async {
+    final now = DateTime.now();
+    final first = now.subtract(const Duration(days: 7));
+    final last = now.add(const Duration(days: 14));
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now.isAfter(first) && now.isBefore(last) ? now : first,
+      firstDate: first,
+      lastDate: last,
+    );
+
+    if (picked != null) setState(() => deadline = picked);
+  }
+
+  void saveTask() {
+    if (titleController.text.trim().isEmpty || deadline == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Lütfen başlık ve tarih seçin")),
+      );
+      return;
+    }
+
+    final newTask = Task(
+      title: titleController.text.trim(),
+      isChecked: false,
+      priority: priority,
+      deadline: deadline!,
+    );
+
+    Navigator.pop(context, newTask); 
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Add Task")),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: InputDecoration(labelText: "Task Title"),
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Text("Priority: "),
+                DropdownButton<int>(
+                  value: priority,
+                  items: [0, 1, 2, 3]
+                      .map((e) => DropdownMenuItem(value: e, child: Text("$e")))
+                      .toList(),
+                  onChanged: (val) => setState(() => priority = val ?? 0),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Text("Deadline: ${deadline != null ? deadline.toString().split(' ')[0] : "Not set"}"),
+                SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () => pickDeadline(context),
+                  child: Text("Pick Date"),
+                ),
+              ],
+            ),
+            SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: saveTask,
+              child: Text("Save Task"),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
